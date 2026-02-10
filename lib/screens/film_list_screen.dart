@@ -61,8 +61,11 @@ class FilmListScreenState extends State<FilmListScreen> {
             .toList();
 
     return Scaffold(
+      backgroundColor: const Color(0xFFD6AE7B), // glavna pozadina
       appBar: AppBar(
         title: const Text('Filmovi'),
+        backgroundColor: const Color(0xFFB6895A), // tamniji header
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.login),
@@ -86,61 +89,97 @@ class FilmListScreenState extends State<FilmListScreen> {
           ),
         ],
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
-            DropdownButton<String>(
-              value: izabranaKategorija,
-              isExpanded: true,
-              items: kategorije.map((kat) {
-                return DropdownMenuItem(
-                  value: kat,
-                  child: Text(kat),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  izabranaKategorija = value!;
-                });
-              },
+            // FILTER KATEGORIJA
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFB6895A),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: izabranaKategorija,
+                  isExpanded: true,
+                  dropdownColor: const Color(0xFFD6AE7B),
+                  items: kategorije.map((kat) {
+                    return DropdownMenuItem(
+                      value: kat,
+                      child: Text(
+                        kat,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      izabranaKategorija = value!;
+                    });
+                  },
+                ),
+              ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
+            // GRID FILMOVA
             Expanded(
               child: GridView.builder(
                 itemCount: prikazaniFilmovi.length,
                 gridDelegate:
                     const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 0.55,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.58,
                 ),
                 itemBuilder: (context, index) {
                   final film = prikazaniFilmovi[index];
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.asset(
-                            film['image']!,
-                            fit: BoxFit.cover,
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE7C59A),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(14),
+                            ),
+                            child: Image.asset(
+                              film['image']!,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        film['title']!,
-                        style:
-                            const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                        Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Text(
+                            film['title']!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),
