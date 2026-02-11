@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
+import 'film_detail_screen.dart';
 
 class FilmListScreen extends StatefulWidget {
   const FilmListScreen({super.key});
@@ -61,10 +62,10 @@ class FilmListScreenState extends State<FilmListScreen> {
             .toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFD6AE7B), // glavna pozadina
+      backgroundColor: const Color(0xFFD6AE7B),
       appBar: AppBar(
         title: const Text('Filmovi'),
-        backgroundColor: const Color(0xFFB6895A), // tamniji header
+        backgroundColor: const Color(0xFFB6895A),
         elevation: 0,
         actions: [
           IconButton(
@@ -93,7 +94,7 @@ class FilmListScreenState extends State<FilmListScreen> {
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
-            // FILTER KATEGORIJA
+            // FILTER
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
@@ -125,7 +126,7 @@ class FilmListScreenState extends State<FilmListScreen> {
 
             const SizedBox(height: 16),
 
-            // GRID FILMOVA
+            // GRID
             Expanded(
               child: GridView.builder(
                 itemCount: prikazaniFilmovi.length,
@@ -139,46 +140,56 @@ class FilmListScreenState extends State<FilmListScreen> {
                 itemBuilder: (context, index) {
                   final film = prikazaniFilmovi[index];
 
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE7C59A),
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(14),
-                            ),
-                            child: Image.asset(
-                              film['image']!,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => FilmDetailScreen(
+                            film: film,
+                            
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(6),
-                          child: Text(
-                            film['title']!,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                      );
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE7C59A),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.asset(
+                                film['image']!,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                          Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: Text(
+                              film['title']!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
