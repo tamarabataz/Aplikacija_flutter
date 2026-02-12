@@ -1,125 +1,201 @@
+import 'package:film_app/screens/root_screen.dart';
 import 'package:flutter/material.dart';
-import 'signup_screen.dart';
-import 'film_list_screen.dart';
+import '../widgets/app_background';
+import 'package:film_app/screens/signup_screen.dart';
 import 'package:film_app/auth_service.dart';
+import 'package:film_app/screens/film_list_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.lock_outline, size: 70, color: Colors.brown),
-              const SizedBox(height: 24),
-
-              // EMAIL
-              TextFormField(
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: const Icon(Icons.email),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Email je obavezan';
-                  }
-                  if (!value.contains('@')) {
-                    return 'Email nije validan';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              // PASSWORD
-              TextFormField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'Lozinka',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: const Icon(Icons.lock),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Lozinka je obavezna';
-                  }
-                  if (value.length < 4) {
-                    return 'Lozinka mora imati bar 4 karaktera';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 24),
-
-              // LOGIN
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (!formKey.currentState!.validate()) return;
-
-                    final email = emailController.text;
-                    final password = passwordController.text;
-
-                    // PROVERA DA LI POSTOJI NALOG
-                    if (AuthService.users.containsKey(email) &&
-    AuthService.users[email] == password) {
-  AuthService.isLoggedIn = true;
-
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const FilmListScreen(),
-    ),
-  );
-} else {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Ne postoji nalog ili je lozinka pogrešna'),
-    ),
-  );
+  State<LoginScreen> createState() => _LoginScreenState();
 }
-                  },
-                  child: const Text('Login'),
+
+class _LoginScreenState extends State<LoginScreen> {
+
+  final _formKey = GlobalKey<FormState>();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  void login() {
+    if (!_formKey.currentState!.validate()) return;
+
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (AuthService.users.containsKey(email) &&
+        AuthService.users[email] == password) {
+
+      AuthService.login(email);
+      Navigator.pushAndRemoveUntil(
+  context,
+  MaterialPageRoute(builder: (_) => const FilmListScreen()),
+  (route) => false,
+);
+
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Pogrešan email ili lozinka"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: AppBackground(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(color: Colors.white.withOpacity(0.2)),
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+
+                    const Text(
+                      "Dobrodošli nazad",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    TextFormField(
+                      controller: emailController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: _inputDecoration("Email", Icons.email_outlined),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Unesite email";
+                        }
+                        if (!value.contains("@")) {
+                          return "Neispravan email format";
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    TextFormField(
+                      controller: passwordController,
+                      obscureText: true,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: _inputDecoration("Lozinka", Icons.lock_outline),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Unesite lozinku";
+                        }
+                        if (value.length < 4) {
+                          return "Minimum 4 karaktera";
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: login,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE7C59A),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                        ),
+                        child: const Text(
+                          "Login",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+
+
+
+
+
+                  TextButton(
+  onPressed: () {
+    Navigator.pushAndRemoveUntil(
+  context,
+  MaterialPageRoute(builder: (_) => const RootScreen()),
+  (route) => false,
+);
+  },
+  child: const Text(
+    "Nastavi kao gost",
+    style: TextStyle(color: Colors.white70),
+  ),
+),
+
+
+
+
+
+
+
+
+
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SignupScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        "Nemaš nalog? Registruj se",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-
-              const SizedBox(height: 16),
-
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const SignupScreen(),
-                    ),
-                  );
-                },
-                child: const Text('Nemam nalog? Sign up'),
-              ),
-            ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint, IconData icon) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Colors.white54),
+      prefixIcon: Icon(icon, color: Colors.white70),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.08),
+      errorStyle: const TextStyle(color: Colors.redAccent),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
       ),
     );
   }

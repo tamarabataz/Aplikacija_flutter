@@ -1,5 +1,9 @@
+import 'package:film_app/screens/root_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/auth_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:film_app/providers/films_provider.dart';
+import 'package:film_app/providers/wishlist_provider.dart';
 
 void main() {
   runApp(const FilmApp());
@@ -10,19 +14,19 @@ class FilmApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-  debugShowCheckedModeBanner: false,
-  title: 'FilmApp',
-  theme: ThemeData(
-    primarySwatch: Colors.brown,
-    scaffoldBackgroundColor: const Color.fromARGB(255, 211, 165, 112),
-    appBarTheme: const AppBarTheme(
-    backgroundColor: Color(0xFFB6895A),
-    foregroundColor: Colors.black,
-    elevation: 0,
+    return MultiProvider(
+  providers: [
+    ChangeNotifierProvider(create: (_) => FilmsProvider()),
+     ChangeNotifierProvider(create: (_) => WishlistProvider()),
+  ],
+  child: MaterialApp(
+    debugShowCheckedModeBanner: false,
+    title: 'FilmApp',
+    theme: ThemeData(
+      primarySwatch: Colors.brown,
+    ),
+    home: const AuthScreen(),
   ),
-  ),
-  home: const AuthScreen(),
 );
   }
 }

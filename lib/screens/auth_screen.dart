@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
-import 'signup_screen.dart';
-import 'film_list_screen.dart';
+import 'package:film_app/widgets/app_background';
+import 'package:film_app/screens/login_screen.dart';
+import 'package:film_app/screens/signup_screen.dart';
+import 'package:film_app/screens/root_screen.dart';
+import 'package:film_app/auth_service.dart';
 
 class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
@@ -9,98 +11,129 @@ class AuthScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Naslov
-              const Text(
-                'Dobrodošli',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
+      body: AppBackground(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
                 ),
               ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
 
-              const SizedBox(height: 24),
+                  const Text(
+                    "Dobrodošli",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
 
-              // "Logo" (za sad ikonica, kasnije može prava slika)
-              const Icon(
-                Icons.movie,
-                size: 80,
-                color: Colors.brown,
-              ),
+                  const SizedBox(height: 20),
 
-              const SizedBox(height: 40),
+                  const Icon(
+                    Icons.movie_creation_outlined,
+                    size: 70,
+                    color: Color(0xFFE7C59A),
+                  ),
 
-              // LOGIN dugme
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const LoginScreen(),
+                  const SizedBox(height: 40),
+
+                  // LOGIN
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE7C59A),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
                       ),
-                    );
-                  },
-                  child: const Text('Login'),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // SIGN UP dugme
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const SignupScreen(),
+                      child: const Text(
+                        "Login",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
                       ),
-                    );
-                  },
-                  child: const Text('Sign up'),
-                ),
-              ),
-              const SizedBox(height: 24),
+                    ),
+                  ),
 
+                  const SizedBox(height: 16),
 
-              TextButton(
-              onPressed: () {
-               Navigator.pushReplacement(
-                context,
-              MaterialPageRoute(
-                 builder: (_) =>  FilmListScreen(),
-              ),
-           );
-          },
-          child: const Text(
-              'Nastavi kao gost',
-              style: TextStyle(
-               fontSize: 16,
-              decoration: TextDecoration.underline,
+                  // SIGN UP
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SignupScreen(),
+                          ),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFE7C59A)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                      ),
+                      child: const Text(
+                        "Sign up",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFE7C59A),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // GUEST
+                  TextButton(
+                    onPressed: () {
+                      AuthService.logout();
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>  RootScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      "Nastavi kao gost",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white70,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-
-
-
-
-
-            ],
-            
-
-
-
-
-
-
           ),
         ),
       ),
