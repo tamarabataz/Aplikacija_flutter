@@ -3,6 +3,8 @@ import 'package:film_app/auth_service.dart';
 import 'package:provider/provider.dart';
 import 'package:film_app/providers/wishlist_provider.dart';
 import 'package:film_app/models/film_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class FilmDetailScreen extends StatefulWidget {
   final FilmModel film;
@@ -20,6 +22,201 @@ class _FilmDetailScreenState extends State<FilmDetailScreen> {
   double rating = 0;
   final TextEditingController commentController = TextEditingController();
 
+  Future<void> _submitReview() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Morate biti prijavljeni da pošaljete komentar.'),
+        ),
+      );
+      return;
+    }
+
+    final comment = commentController.text.trim();
+    if (comment.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unesite komentar.'),
+        ),
+      );
+      return;
+    }
+
+    if (rating <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Izaberite ocenu pre slanja komentara.'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      final userData = userDoc.data() ?? <String, dynamic>{};
+      final userName = (userData['name'] ?? '').toString();
+
+      await FirebaseFirestore.instance.collection('reviews').add({
+        'filmId': widget.film.filmId,
+        'userId': user.uid,
+        'userName': userName,
+        'rating': rating,
+        'comment': comment,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+      setState(() {
+        rating = 0;
+      });
+      commentController.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Komentar uspešno sačuvan.'),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Greška pri čuvanju komentara.'),
+        ),
+      );
+    }
+  }
+  String _formatReviewDate(Timestamp? timestamp) {
+    if (timestamp == null) return '';
+    final dt = timestamp.toDate().toLocal();
+    final day = dt.day.toString().padLeft(2, '0');
+    final month = dt.month.toString().padLeft(2, '0');
+    final year = dt.year.toString();
+    final hour = dt.hour.toString().padLeft(2, '0');
+    final minute = dt.minute.toString().padLeft(2, '0');
+    return '$day.$month.$year $hour:$minute';
+  }
+
+  Widget _buildReviews() {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('reviews')
+          .where('filmId', isEqualTo: widget.film.filmId)
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(
+            child: Text(
+              'Jos nema komentara',
+              style: TextStyle(color: Colors.grey),
+            ),
+          );
+        }
+
+        final docs = snapshot.data!.docs;
+        final totalRating = docs.fold<double>(
+          0,
+          (sum, doc) => sum + ((doc.data()['rating'] as num?)?.toDouble() ?? 0),
+        );
+        final averageRating = totalRating / docs.length;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  averageRating.toStringAsFixed(1),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Row(
+                  children: List.generate(5, (index) {
+                    return Icon(
+                      Icons.star,
+                      color: index < averageRating.round()
+                          ? Colors.amber
+                          : Colors.white30,
+                      size: 20,
+                    );
+                  }),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ...docs.map((doc) {
+              final data = doc.data();
+              final userName = (data['userName'] ?? '').toString();
+              final comment = (data['comment'] ?? '').toString();
+              final reviewRating = (data['rating'] as num?)?.toDouble() ?? 0.0;
+              final createdAt = data['createdAt'] as Timestamp?;
+              final dateText = _formatReviewDate(createdAt);
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                color: Colors.white.withOpacity(0.08),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: List.generate(5, (index) {
+                          return Icon(
+                            Icons.star,
+                            color: index < reviewRating.round()
+                                ? Colors.amber
+                                : Colors.white30,
+                            size: 16,
+                          );
+                        }),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        comment,
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        dateText,
+                        style: const TextStyle(
+                          color: Colors.white54,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        );
+      },
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -118,6 +315,8 @@ class _FilmDetailScreenState extends State<FilmDetailScreen> {
                   widget.film.description,
                   style: const TextStyle(color: Colors.white70),
                 ),
+                const SizedBox(height: 20),
+                _buildReviews(),
                 const SizedBox(height: 30),
 
                 if (AuthService.isLoggedIn) ...[
@@ -173,16 +372,7 @@ class _FilmDetailScreenState extends State<FilmDetailScreen> {
                             const Color(0xFFE7C59A),
                         foregroundColor: Colors.black,
                       ),
-                      onPressed: () {
-                        commentController.clear();
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Komentar sačuvan (demo)'),
-                          ),
-                        );
-                      },
+                      onPressed: _submitReview,
                       child:
                           const Text('Pošalji komentar'),
                     ),
@@ -213,3 +403,5 @@ class _FilmDetailScreenState extends State<FilmDetailScreen> {
     );
   }
 }
+
+

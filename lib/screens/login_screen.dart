@@ -1,9 +1,9 @@
+import 'package:film_app/auth_service.dart';
 import 'package:film_app/screens/root_screen.dart';
+import 'package:film_app/screens/signup_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../widgets/app_background';
-import 'package:film_app/screens/signup_screen.dart';
-import 'package:film_app/auth_service.dart';
-import 'package:film_app/screens/film_list_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,31 +13,36 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-
   final _formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  void login() {
+  Future<void> login() async {
     if (!_formKey.currentState!.validate()) return;
 
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
-    if (AuthService.users.containsKey(email) &&
-        AuthService.users[email] == password) {
+    try {
+      await AuthService.instance.login(email, password);
+      if (!mounted) return;
 
-      AuthService.login(email);
       Navigator.pushAndRemoveUntil(
-  context,
-  MaterialPageRoute(builder: (_) => const RootScreen()),
-  (route) => false,
-);
+        context,
+        MaterialPageRoute(builder: (_) => const RootScreen()),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      final errorMessage = e.code == 'invalid-credential' ||
+              e.code == 'wrong-password' ||
+              e.code == 'user-not-found'
+          ? "Pogre\u0161an email ili lozinka"
+          : "Gre\u0161ka pri prijavi. Poku\u0161ajte ponovo.";
 
-    } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Pogrešan email ili lozinka"),
+        SnackBar(
+          content: Text(errorMessage),
           backgroundColor: Colors.red,
         ),
       );
@@ -47,6 +52,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Login"),
+      ),
       body: AppBackground(
         child: Center(
           child: SingleChildScrollView(
@@ -63,18 +71,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-
                     const Text(
-                      "Dobrodošli nazad",
+                      "Dobrodo\u0161li nazad",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 30),
-
                     TextFormField(
                       controller: emailController,
                       style: const TextStyle(color: Colors.white),
@@ -89,9 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 20),
-
                     TextFormField(
                       controller: passwordController,
                       obscureText: true,
@@ -107,9 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 30),
-
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -131,36 +132,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 20),
-
-
-
-
-
-
-                  TextButton(
-  onPressed: () {
-    Navigator.pushAndRemoveUntil(
-  context,
-  MaterialPageRoute(builder: (_) => const RootScreen()),
-  (route) => false,
-);
-  },
-  child: const Text(
-    "Nastavi kao gost",
-    style: TextStyle(color: Colors.white70),
-  ),
-),
-
-
-
-
-
-
-
-
-
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RootScreen(allowGuest: true),
+                          ),
+                          (route) => false,
+                        );
+                      },
+                      child: const Text(
+                        "Nastavi kao gost",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ),
                     TextButton(
                       onPressed: () {
                         Navigator.push(
@@ -171,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                       },
                       child: const Text(
-                        "Nemaš nalog? Registruj se",
+                        "Nema\u0161 nalog? Registruj se",
                         style: TextStyle(color: Colors.white70),
                       ),
                     ),

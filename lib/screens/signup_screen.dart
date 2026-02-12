@@ -1,9 +1,9 @@
-import 'package:film_app/screens/root_screen.dart';
-import 'package:flutter/material.dart';
-import 'package:film_app/widgets/app_background';
 import 'package:film_app/auth_service.dart';
-import 'package:film_app/screens/film_list_screen.dart';
 import 'package:film_app/screens/login_screen.dart';
+import 'package:film_app/screens/root_screen.dart';
+import 'package:film_app/widgets/app_background';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -13,41 +13,53 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-
   final _formKey = GlobalKey<FormState>();
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  void signup() {
+  Future<void> signup() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final name = nameController.text.trim();
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
-    if (AuthService.users.containsKey(email)) {
+    try {
+      await AuthService.instance.signUp(name, email, password);
+      if (!mounted) return;
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const RootScreen()),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      late final String errorMessage;
+      if (e.code == 'weak-password') {
+        errorMessage = "Lozinka mora imati najmanje 6 karaktera";
+      } else if (e.code == 'email-already-in-use') {
+        errorMessage = "Ovaj email je već registrovan";
+      } else {
+        errorMessage = "Greška pri registraciji. Pokušajte ponovo.";
+      }
+
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Korisnik već postoji"),
+        SnackBar(
+          content: Text(errorMessage),
           backgroundColor: Colors.red,
         ),
       );
-      return;
     }
-
-    AuthService.users[email] = password;
-    AuthService.login(email);
-
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const RootScreen()),
-      (route) => false,
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Sign up"),
+      ),
       body: AppBackground(
         child: Center(
           child: SingleChildScrollView(
@@ -64,7 +76,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-
                     const Text(
                       "Kreiraj nalog",
                       style: TextStyle(
@@ -73,9 +84,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 30),
-
                     TextFormField(
                       controller: nameController,
                       style: const TextStyle(color: Colors.white),
@@ -90,9 +99,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 20),
-
                     TextFormField(
                       controller: emailController,
                       style: const TextStyle(color: Colors.white),
@@ -107,9 +114,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 20),
-
                     TextFormField(
                       controller: passwordController,
                       obscureText: true,
@@ -125,9 +130,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 30),
-
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -149,31 +152,22 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 20),
-
-
-
                     TextButton(
                       onPressed: () {
                         Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (_) => const RootScreen()),
-                      (route) => false,
-                    );
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RootScreen(allowGuest: true),
+                          ),
+                          (route) => false,
+                        );
                       },
                       child: const Text(
                         "Nastavi kao gost",
                         style: TextStyle(color: Colors.white70),
                       ),
                     ),
-
-
-
-
-
-
-
                     TextButton(
                       onPressed: () {
                         Navigator.push(

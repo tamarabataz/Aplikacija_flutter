@@ -1,12 +1,14 @@
-import 'package:film_app/screens/root_screen.dart';
+import 'package:film_app/screens/login_screen.dart';
 import 'package:flutter/material.dart';
-import 'screens/auth_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:film_app/providers/films_provider.dart';
 import 'package:film_app/providers/wishlist_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const FilmApp());
 }
 
@@ -27,7 +29,7 @@ class FilmApp extends StatelessWidget {
   primarySwatch: Colors.brown,
   textTheme: GoogleFonts.poppinsTextTheme(),
 ),
-    home: const AuthScreen(),
+    home: const LoginScreen(),
   ),
 );
   }

@@ -11,6 +11,9 @@ class AuthScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Dobrodošli"),
+      ),
       body: AppBackground(
         child: Center(
           child: Padding(
@@ -113,12 +116,13 @@ class AuthScreen extends StatelessWidget {
 
                   // GUEST
                   TextButton(
-                    onPressed: () {
-                      AuthService.logout();
+                    onPressed: () async {
+                      await AuthService.instance.logout();
+                      if (!context.mounted) return;
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>  RootScreen(),
+                          builder: (_) => const RootScreen(allowGuest: true),
                         ),
                       );
                     },

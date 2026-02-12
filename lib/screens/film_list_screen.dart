@@ -1,23 +1,32 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
-import 'signup_screen.dart';
-import 'film_detail_screen.dart';
-import 'package:film_app/auth_service.dart';
-import 'package:film_app/admin/admin_dashboard_screen.dart';
-import 'search_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:film_app/providers/wishlist_provider.dart';
 import 'package:film_app/providers/films_provider.dart';
 import 'package:film_app/models/film_model.dart';
+import 'package:film_app/auth_service.dart';
+
+import 'login_screen.dart';
+import 'signup_screen.dart';
+import 'film_detail_screen.dart';
+import 'search_screen.dart';
+import 'package:film_app/admin/admin_dashboard_screen.dart';
 
 class FilmListScreen extends StatefulWidget {
   const FilmListScreen({super.key});
 
   @override
-  State<FilmListScreen> createState() => FilmListScreenState();
+  State<FilmListScreen> createState() => _FilmListScreenState();
 }
 
-class FilmListScreenState extends State<FilmListScreen> {
+class _FilmListScreenState extends State<FilmListScreen> {
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() =>
+        Provider.of<FilmsProvider>(context, listen: false).fetchFilms());
+  }
+
   final List<String> kategorije = [
     'Sve',
     'Kultni',
@@ -30,7 +39,6 @@ class FilmListScreenState extends State<FilmListScreen> {
   @override
   Widget build(BuildContext context) {
     final filmsProvider = Provider.of<FilmsProvider>(context);
-
     final popularFilms = filmsProvider.popularFilms;
     final newFilms = filmsProvider.newFilms;
 
@@ -53,18 +61,26 @@ class FilmListScreenState extends State<FilmListScreen> {
           ),
         ),
         actions: [
-          if (AuthService.isAdmin)
-            IconButton(
-              icon: const Icon(Icons.admin_panel_settings),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const AdminDashboardScreen(),
-                  ),
+          FutureBuilder<bool>(
+            future: AuthService.instance.isAdmin(),
+            builder: (context, snapshot) {
+              if (snapshot.data == true) {
+                return IconButton(
+                  icon: const Icon(Icons.admin_panel_settings),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AdminDashboardScreen(),
+                      ),
+                    );
+                  },
                 );
-              },
-            ),
+              }
+
+              return const SizedBox.shrink();
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
@@ -78,19 +94,18 @@ class FilmListScreenState extends State<FilmListScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.login),
-            onPressed: () {
-              AuthService.logout();
-              Navigator.pushAndRemoveUntil(
+            onPressed: () async {
+              await AuthService.instance.logout();
+              if (!context.mounted) return;
+              Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (route) => false,
               );
             },
           ),
           IconButton(
             icon: const Icon(Icons.person_add),
             onPressed: () {
-              AuthService.logout();
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const SignupScreen()),
@@ -119,29 +134,22 @@ class FilmListScreenState extends State<FilmListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
 
-                  // 🔥 NAJGLEDANIJI
+                  /// 🔥 NAJGLEDANIJI
                   if (popularFilms.isNotEmpty) ...[
                     const Text(
-                      " Najgledaniji filmovi",
+                      "Najgledaniji filmovi",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white
-                        
+                        color: Colors.white,
                       ),
                     ),
-
                     Container(
-  margin: const EdgeInsets.only(top: 6, bottom: 12),
-  height: 2,
-  width: 120,
-  color: Color(0xFFE7C59A),
-),
-
-
-
-
-                    const SizedBox(height: 12),
+                      margin: const EdgeInsets.only(top: 6, bottom: 12),
+                      height: 2,
+                      width: 120,
+                      color: Color(0xFFE7C59A),
+                    ),
                     SizedBox(
                       height: 180,
                       child: ListView.builder(
@@ -149,32 +157,29 @@ class FilmListScreenState extends State<FilmListScreen> {
                         itemCount: popularFilms.length,
                         itemBuilder: (context, index) {
                           return _buildHorizontalCard(
-                              popularFilms[index], context);
+                              popularFilms[index]);
                         },
                       ),
                     ),
-                    const SizedBox(height: 9),
+                    const SizedBox(height: 25),
                   ],
 
-                  // 🆕 NOVI FILMOVI
+                  /// 🆕 NOVI
                   if (newFilms.isNotEmpty) ...[
                     const Text(
-                      " Novi dodati filmovi",
+                      "Novi dodati filmovi",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
-                        
                       ),
                     ),
-
                     Container(
-  margin: const EdgeInsets.only(top: 6, bottom: 12),
-  height: 2,
-  width: 120,
-  color: Color(0xFFE7C59A),
-),
-                    const SizedBox(height: 12),
+                      margin: const EdgeInsets.only(top: 6, bottom: 12),
+                      height: 2,
+                      width: 120,
+                      color: Color(0xFFE7C59A),
+                    ),
                     SizedBox(
                       height: 180,
                       child: ListView.builder(
@@ -182,14 +187,14 @@ class FilmListScreenState extends State<FilmListScreen> {
                         itemCount: newFilms.length,
                         itemBuilder: (context, index) {
                           return _buildHorizontalCard(
-                              newFilms[index], context);
+                              newFilms[index]);
                         },
                       ),
                     ),
                     const SizedBox(height: 25),
                   ],
 
-                  // FILTER
+                  /// FILTER
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
@@ -218,8 +223,9 @@ class FilmListScreenState extends State<FilmListScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 0),
+                  const SizedBox(height: 20),
 
+                  /// GRID
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -233,7 +239,7 @@ class FilmListScreenState extends State<FilmListScreen> {
                     ),
                     itemBuilder: (context, index) {
                       return _buildMovieCard(
-                          prikazaniFilmovi[index], context);
+                          prikazaniFilmovi[index]);
                     },
                   ),
                 ],
@@ -245,7 +251,7 @@ class FilmListScreenState extends State<FilmListScreen> {
     );
   }
 
-  Widget _buildHorizontalCard(FilmModel film, BuildContext context) {
+  Widget _buildHorizontalCard(FilmModel film) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -269,7 +275,7 @@ class FilmListScreenState extends State<FilmListScreen> {
     );
   }
 
-  Widget _buildMovieCard(FilmModel film, BuildContext context) {
+  Widget _buildMovieCard(FilmModel film) {
     final wishlistProvider = Provider.of<WishlistProvider>(context);
     final isInWishlist =
         wishlistProvider.isInWishlist(film.filmId);

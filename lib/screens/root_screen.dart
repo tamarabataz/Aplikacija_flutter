@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:film_app/auth_service.dart';
+import 'package:film_app/screens/auth_screen.dart';
 import 'package:film_app/screens/film_list_screen.dart';
 import 'package:film_app/screens/wishlist_screen.dart';
 import 'package:film_app/screens/profile_screen.dart';
 
 class RootScreen extends StatefulWidget {
-  const RootScreen({super.key});
+  final bool allowGuest;
+
+  const RootScreen({super.key, this.allowGuest = false});
 
   @override
   State<RootScreen> createState() => _RootScreenState();
 }
 
 class _RootScreenState extends State<RootScreen> {
-
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
@@ -22,9 +26,31 @@ class _RootScreenState extends State<RootScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.allowGuest) {
+      return _buildMainScaffold();
+    }
+
+    return StreamBuilder<User?>(
+      stream: AuthService.instance.authStateChanges,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (!snapshot.hasData) {
+          return const AuthScreen();
+        }
+
+        return _buildMainScaffold();
+      },
+    );
+  }
+
+  Widget _buildMainScaffold() {
     return Scaffold(
       body: _screens[_selectedIndex],
-
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.black,
         selectedItemColor: const Color(0xFFE7C59A),
