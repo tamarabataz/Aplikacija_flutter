@@ -4,6 +4,7 @@ import 'screens/auth_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:film_app/providers/films_provider.dart';
 import 'package:film_app/providers/wishlist_provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(const FilmApp());
@@ -23,8 +24,9 @@ class FilmApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     title: 'FilmApp',
     theme: ThemeData(
-      primarySwatch: Colors.brown,
-    ),
+  primarySwatch: Colors.brown,
+  textTheme: GoogleFonts.poppinsTextTheme(),
+),
     home: const AuthScreen(),
   ),
 );

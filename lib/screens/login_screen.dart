@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
       AuthService.login(email);
       Navigator.pushAndRemoveUntil(
   context,
-  MaterialPageRoute(builder: (_) => const FilmListScreen()),
+  MaterialPageRoute(builder: (_) => const RootScreen()),
   (route) => false,
 );
 

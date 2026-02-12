@@ -5,6 +5,10 @@ import 'film_detail_screen.dart';
 import 'package:film_app/auth_service.dart';
 import 'package:film_app/admin/admin_dashboard_screen.dart';
 import 'search_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:film_app/providers/wishlist_provider.dart';
+import 'package:film_app/providers/films_provider.dart';
+import 'package:film_app/models/film_model.dart';
 
 class FilmListScreen extends StatefulWidget {
   const FilmListScreen({super.key});
@@ -14,40 +18,6 @@ class FilmListScreen extends StatefulWidget {
 }
 
 class FilmListScreenState extends State<FilmListScreen> {
-
-  final List<Map<String, String>> films = [
-    {
-      'title': 'Ko to tamo peva',
-      'image': 'assets/images/kototamopeva.jpg',
-      'category': 'Kultni',
-    },
-    {
-      'title': 'Maratonci trče počasni krug',
-      'image': 'assets/images/maratonci.webp',
-      'category': 'Komedija',
-    },
-    {
-      'title': 'Balkanski špijun',
-      'image': 'assets/images/balkanskispijun.jpg',
-      'category': 'Drama',
-    },
-    {
-      'title': 'Davitelj protiv davitelja',
-      'image': 'assets/images/davitelj.jpg',
-      'category': 'Kultni',
-    },
-    {
-      'title': 'Sjećaš li se Dolly Bell?',
-      'image': 'assets/images/dolly.jpg',
-      'category': 'Drama',
-    },
-    {
-      'title': 'Otac na službenom putu',
-      'image': 'assets/images/Otac_na_sluzbenom_putu.jpg',
-      'category': 'Drama',
-    },
-  ];
-
   final List<String> kategorije = [
     'Sve',
     'Kultni',
@@ -59,11 +29,14 @@ class FilmListScreenState extends State<FilmListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final filmsProvider = Provider.of<FilmsProvider>(context);
+
+    final popularFilms = filmsProvider.popularFilms;
+    final newFilms = filmsProvider.newFilms;
+
     final prikazaniFilmovi = izabranaKategorija == 'Sve'
-        ? films
-        : films
-            .where((film) => film['category'] == izabranaKategorija)
-            .toList();
+        ? filmsProvider.getFilms
+        : filmsProvider.findByCategory(izabranaKategorija);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -80,7 +53,6 @@ class FilmListScreenState extends State<FilmListScreen> {
           ),
         ),
         actions: [
-
           if (AuthService.isAdmin)
             IconButton(
               icon: const Icon(Icons.admin_panel_settings),
@@ -93,7 +65,6 @@ class FilmListScreenState extends State<FilmListScreen> {
                 );
               },
             ),
-
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
@@ -105,20 +76,17 @@ class FilmListScreenState extends State<FilmListScreen> {
               );
             },
           ),
-
           IconButton(
-  icon: const Icon(Icons.login),
-  onPressed: () {
-    AuthService.logout(); // ← ODJAVA ADMINA
-
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
-  },
-),
-
+            icon: const Icon(Icons.login),
+            onPressed: () {
+              AuthService.logout();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.person_add),
             onPressed: () {
@@ -133,60 +101,128 @@ class FilmListScreenState extends State<FilmListScreen> {
       ),
       body: Stack(
         children: [
-
-          // Background image
           Positioned.fill(
             child: Image.asset(
               "assets/images/bg.jpg",
               fit: BoxFit.cover,
             ),
           ),
-
-          // Dark overlay
           Positioned.fill(
             child: Container(
               color: Colors.black.withOpacity(0.75),
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.only(top: 110, left: 16, right: 16),
-            child: Column(
-              children: [
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
 
-                // Category filter
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: izabranaKategorija,
-                      dropdownColor: Colors.black,
-                      style: const TextStyle(color: Colors.white),
-                      iconEnabledColor: Colors.white,
-                      isExpanded: true,
-                      items: kategorije.map((kat) {
-                        return DropdownMenuItem(
-                          value: kat,
-                          child: Text(kat),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          izabranaKategorija = value!;
-                        });
-                      },
+                  // 🔥 NAJGLEDANIJI
+                  if (popularFilms.isNotEmpty) ...[
+                    const Text(
+                      " Najgledaniji filmovi",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white
+                        
+                      ),
+                    ),
+
+                    Container(
+  margin: const EdgeInsets.only(top: 6, bottom: 12),
+  height: 2,
+  width: 120,
+  color: Color(0xFFE7C59A),
+),
+
+
+
+
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 180,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: popularFilms.length,
+                        itemBuilder: (context, index) {
+                          return _buildHorizontalCard(
+                              popularFilms[index], context);
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 9),
+                  ],
+
+                  // 🆕 NOVI FILMOVI
+                  if (newFilms.isNotEmpty) ...[
+                    const Text(
+                      " Novi dodati filmovi",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        
+                      ),
+                    ),
+
+                    Container(
+  margin: const EdgeInsets.only(top: 6, bottom: 12),
+  height: 2,
+  width: 120,
+  color: Color(0xFFE7C59A),
+),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 180,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: newFilms.length,
+                        itemBuilder: (context, index) {
+                          return _buildHorizontalCard(
+                              newFilms[index], context);
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 25),
+                  ],
+
+                  // FILTER
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: izabranaKategorija,
+                        dropdownColor: Colors.black,
+                        style: const TextStyle(color: Colors.white),
+                        iconEnabledColor: Colors.white,
+                        isExpanded: true,
+                        items: kategorije.map((kat) {
+                          return DropdownMenuItem(
+                            value: kat,
+                            child: Text(kat),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            izabranaKategorija = value!;
+                          });
+                        },
+                      ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 0),
 
-                Expanded(
-                  child: GridView.builder(
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
                     itemCount: prikazaniFilmovi.length,
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
@@ -196,12 +232,12 @@ class FilmListScreenState extends State<FilmListScreen> {
                       childAspectRatio: 0.65,
                     ),
                     itemBuilder: (context, index) {
-                      final film = prikazaniFilmovi[index];
-                      return _buildMovieCard(film, context);
+                      return _buildMovieCard(
+                          prikazaniFilmovi[index], context);
                     },
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -209,7 +245,35 @@ class FilmListScreenState extends State<FilmListScreen> {
     );
   }
 
-  Widget _buildMovieCard(Map<String, String> film, BuildContext context) {
+  Widget _buildHorizontalCard(FilmModel film, BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FilmDetailScreen(film: film),
+          ),
+        );
+      },
+      child: Container(
+        width: 120,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          image: DecorationImage(
+            image: AssetImage(film.imageUrl),
+            fit: BoxFit.cover,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMovieCard(FilmModel film, BuildContext context) {
+    final wishlistProvider = Provider.of<WishlistProvider>(context);
+    final isInWishlist =
+        wishlistProvider.isInWishlist(film.filmId);
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -234,42 +298,25 @@ class FilmListScreenState extends State<FilmListScreen> {
           borderRadius: BorderRadius.circular(20),
           child: Stack(
             children: [
-
               Positioned.fill(
                 child: Image.asset(
-                  film['image']!,
+                  film.imageUrl,
                   fit: BoxFit.cover,
                 ),
               ),
-
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.9),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
               Positioned(
-                bottom: 12,
-                left: 12,
-                right: 12,
-                child: Text(
-                  film['title']!,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                top: 10,
+                right: 10,
+                child: IconButton(
+                  icon: Icon(
+                    isInWishlist
+                        ? Icons.favorite
+                        : Icons.favorite_border,
+                    color: Colors.red,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  onPressed: () {
+                    wishlistProvider.toggleWishlist(film.filmId);
+                  },
                 ),
               ),
             ],
