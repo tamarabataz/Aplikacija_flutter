@@ -4,6 +4,8 @@ import 'package:film_app/screens/login_screen.dart';
 import 'package:film_app/screens/signup_screen.dart';
 import 'package:film_app/screens/root_screen.dart';
 import 'package:film_app/auth_service.dart';
+import 'package:film_app/providers/wishlist_provider.dart';
+import 'package:provider/provider.dart';
 
 class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
@@ -117,7 +119,12 @@ class AuthScreen extends StatelessWidget {
                   // GUEST
                   TextButton(
                     onPressed: () async {
+                      final wishlistProvider = Provider.of<WishlistProvider>(
+                        context,
+                        listen: false,
+                      );
                       await AuthService.instance.logout();
+                      wishlistProvider.clearWishlist();
                       if (!context.mounted) return;
                       Navigator.pushReplacement(
                         context,

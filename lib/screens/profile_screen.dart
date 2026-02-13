@@ -293,14 +293,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         backgroundColor: Colors.redAccent,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                    onPressed: () async {
-                      await AuthService.instance.logout();
-                      if (!context.mounted) return;
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      );
-                    },
+                      onPressed: () async {
+  await AuthService.instance.logout();
+  if (!context.mounted) return;
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => const LoginScreen()),
+  );
+},
                       child: const Text("Odjava"),
                     ),
                   ),

@@ -32,6 +32,8 @@ class _FilmListScreenState extends State<FilmListScreen> {
     'Kultni',
     'Komedija',
     'Drama',
+    'Triler',
+    'Ljubavni',
   ];
 
   String izabranaKategorija = 'Sve';

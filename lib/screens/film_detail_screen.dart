@@ -100,6 +100,82 @@ class _FilmDetailScreenState extends State<FilmDetailScreen> {
     return '$day.$month.$year $hour:$minute';
   }
 
+  Future<void> _showEditReviewDialog({
+    required String reviewId,
+    required String initialComment,
+    required double initialRating,
+  }) async {
+    final commentEditController = TextEditingController(text: initialComment);
+    double editRating = initialRating;
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Izmeni komentar'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        onPressed: () {
+                          setDialogState(() {
+                            editRating = index + 1;
+                          });
+                        },
+                        icon: Icon(
+                          index < editRating ? Icons.star : Icons.star_border,
+                          color: Colors.amber,
+                        ),
+                      );
+                    }),
+                  ),
+                  TextField(
+                    controller: commentEditController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Komentar',
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Otkaži'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final updatedComment = commentEditController.text.trim();
+                    if (updatedComment.isEmpty) {
+                      return;
+                    }
+
+                    await FirebaseFirestore.instance
+                        .collection('reviews')
+                        .doc(reviewId)
+                        .update({
+                      'comment': updatedComment,
+                      'rating': editRating,
+                      'updatedAt': Timestamp.now(),
+                    });
+
+                    if (!dialogContext.mounted) return;
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: const Text('Sačuvaj'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildReviews() {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance
@@ -122,9 +198,11 @@ class _FilmDetailScreenState extends State<FilmDetailScreen> {
         }
 
         final docs = snapshot.data!.docs;
+        final currentUserId = FirebaseAuth.instance.currentUser?.uid;
         final totalRating = docs.fold<double>(
           0,
-          (sum, doc) => sum + ((doc.data()['rating'] as num?)?.toDouble() ?? 0),
+          (currentTotal, doc) =>
+              currentTotal + ((doc.data()['rating'] as num?)?.toDouble() ?? 0),
         );
         final averageRating = totalRating / docs.length;
 
@@ -158,6 +236,8 @@ class _FilmDetailScreenState extends State<FilmDetailScreen> {
             const SizedBox(height: 16),
             ...docs.map((doc) {
               final data = doc.data();
+              final reviewId = doc.id;
+              final reviewUserId = (data['userId'] ?? '').toString();
               final userName = (data['userName'] ?? '').toString();
               final comment = (data['comment'] ?? '').toString();
               final reviewRating = (data['rating'] as num?)?.toDouble() ?? 0.0;
@@ -195,9 +275,31 @@ class _FilmDetailScreenState extends State<FilmDetailScreen> {
                         }),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        comment,
-                        style: const TextStyle(color: Colors.white70),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              comment,
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                          ),
+                          if (reviewUserId == currentUserId)
+                            IconButton(
+                              icon: const Icon(
+                                Icons.edit,
+                                color: Colors.white70,
+                                size: 20,
+                              ),
+                              onPressed: () async {
+                                await _showEditReviewDialog(
+                                  reviewId: reviewId,
+                                  initialComment: comment,
+                                  initialRating: reviewRating,
+                                );
+                              },
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -403,5 +505,3 @@ class _FilmDetailScreenState extends State<FilmDetailScreen> {
     );
   }
 }
-
-
